@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Neon Glass Calculator</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&family=Cairo:wght@400;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg1: #0b0f17;
+      --bg2: #121828;
+      --accent1: #00e1ff;
+      --accent2: #8a2be2;
+      --accent3: #00ffa3;
+      --text: #e9f1ff;
+      --muted: #a7b3c7;
+      --shadow: 0 20px 50px rgba(0,0,0,.5);
+      --glass: rgba(255,255,255,.06);
+      --blur: blur(18px);
+      --radius: 20px;
+      --ring: drop-shadow(0 0 6px rgba(0,225,255,.55))
+              drop-shadow(0 0 18px rgba(138,43,226,.35));
+      --btn-glow: 0 0 0 rgba(0,0,0,0);
+    }
+
+    /* Light theme */
+    [data-theme="light"]{
+      --bg1: #eef3ff;
+      --bg2: #dee6fb;
+      --accent1: #0066ff;
+      --accent2: #9b00ff;
+      --accent3: #00b37e;
+      --text: #0d1220;
+      --muted: #3a4156;
+      --glass: rgba(255,255,255,.65);
+      --blur: blur(10px);
+      --shadow: 0 20px 50px rgba(0, 30, 90, .15);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: "Cairo", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 700px at 85% -10%, rgba(0,225,255,.18), transparent 60%),
+        radial-gradient(1000px 600px at -10% 110%, rgba(138,43,226,.18), transparent 60%),
+        linear-gradient(145deg, var(--bg1), var(--bg2));
+      display:grid;
+      place-items:center;
+      padding:24px;
+    }
+
+    .wrap{
+      width: min(95vw, 420px);
+      filter: var(--ring);
+    }
+
+    .calc{
+      position:relative;
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      border: 1px solid rgba(255,255,255,.1);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+
+    /* Top bar with theme toggle */
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+    }
+    .brand{
+      font-weight:700;
+      letter-spacing:.5px;
+      display:flex;gap:10px;align-items:center
+    }
+    .pulse{
+      width:10px;height:10px;border-radius:50%;
+      background: var(--accent1);
+      box-shadow: 0 0 10px var(--accent1), 0 0 25px var(--accent1);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100%{transform:scale(1)}
+      50%{transform:scale(1.25)}
+    }
+
+    .theme{
+      display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted)
+    }
+    .switch{
+      position:relative;width:54px;height:30px;border-radius:20px;
+      background: rgba(255,255,255,.1);
+      border:1px solid rgba(255,255,255,.15);
+      box-shadow: inset 0 6px 14px rgba(0,0,0,.25);
+      cursor:pointer;
+    }
+    .knob{
+      position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;
+      background: linear-gradient(180deg, #fff, #cfd8ff);
+      box-shadow: 0 8px 18px rgba(0,0,0,.35);
+      transition: .25s ease;
+    }
+    input#mode:checked + .switch .knob{ left:27px; }
+
+    /* Display */
+    .display{
+      padding:24px 20px 10px;
+    }
+    .screen{
+      font-family: "Orbitron", monospace;
+      font-weight:600;
+      font-size: clamp(26px, 5vw, 38px);
+      text-align: left;
+      direction: ltr; /* الأرقام من الشمال لليمين */
+      background: var(--glass);
+      border: 1px solid rgba(255,255,255,.12);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      border-radius: 14px;
+      padding: 16px 18px;
+      min-height: 64px;
+      display:flex;align-items:center;justify-content:flex-end;
+      overflow:hidden;
+      word-break: break-all;
+      text-shadow: 0 0 6px rgba(0, 225, 255, .35);
+      box-shadow: inset 0 6px 14px rgba(0,0,0,.2);
+    }
+    .sub{
+      margin-top:6px;
+      font-size:13px;color:var(--muted);
+      text-align:left;direction:ltr;min-height:18px;padding-inline:4px
+    }
+
+    /* Grid of keys */
+    .keys{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      padding: 18px;
+      padding-top: 14px;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,.1), transparent 30%),
+        radial-gradient(600px 200px at 100% 0%, rgba(0,225,255,.08), transparent 60%),
+        radial-gradient(600px 200px at 0% 100%, rgba(138,43,226,.08), transparent 60%);
+    }
+
+    .btn{
+      position:relative;
+      border:none; outline:none; cursor:pointer;
+      border-radius: 14px;
+      font-size: 18px; font-weight:700;
+      padding: 16px 10px;
+      color: var(--text);
+      background: linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow:
+        inset 0 8px 18px rgba(255,255,255,.06),
+        0 12px 24px rgba(0,0,0,.35);
+      transition: transform .08s ease, box-shadow .08s ease, background .2s ease;
+      user-select:none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:active{
+      transform: translateY(2px);
+      box-shadow:
+        inset 0 10px 18px rgba(0,0,0,.22),
+        0 6px 16px rgba(0,0,0,.25);
+    }
+    .btn.op{ color:#fff; background:
+      linear-gradient(180deg, rgba(138,43,226,.28), rgba(138,43,226,.16));
+      border-color: rgba(138,43,226,.35);
+      text-shadow: 0 0 10px rgba(138,43,226,.6);
+    }
+    .btn.eq{
+      background:
+        linear-gradient(180deg, rgba(0,225,255,.35), rgba(0,225,255,.18));
+      border-color: rgba(0,225,255,.45);
+      text-shadow: 0 0 10px rgba(0,225,255,.75);
+      box-shadow:
+        inset 0 10px 22px rgba(255,255,255,.08),
+        0 12px 26px rgba(0,225,255,.25), 0 0 0 0 rgba(0,225,255,0);
+      animation: breathe 3s infinite ease-in-out;
+    }
+    @keyframes breathe{
+      0%,100%{ box-shadow:
+        inset 0 10px 22px rgba(255,255,255,.08),
+        0 12px 26px rgba(0,225,255,.25), 0 0 0 0 rgba(0,225,255,0); }
+      50%{ box-shadow:
+        inset 0 10px 22px rgba(255,255,255,.08),
+        0 18px 40px rgba(0,225,255,.45), 0 0 25px 6px rgba(0,225,255,.18); }
+    }
+
+    .btn.fn{
+      color:#fff;
+      background: linear-gradient(180deg, rgba(0,255,163,.28), rgba(0,255,163,.16));
+      border-color: rgba(0,255,163,.35);
+      text-shadow: 0 0 10px rgba(0,255,163,.6);
+    }
+
+    .btn[data-wide="true"]{
+      grid-column: span 2;
+    }
+
+    /* Shine highlight */
+    .btn::before{
+      content:"";
+      position:absolute; inset:0; border-radius: inherit;
+      background: linear-gradient(180deg, rgba(255,255,255,.18), transparent 60%);
+      opacity:.55; pointer-events:none; mix-blend-mode: screen;
+      border-top:1px solid rgba(255,255,255,.3);
+    }
+
+    /* Ripple on click (CSS-only illusion) */
+    .btn::after{
+      content:"";
+      position:absolute; inset:0; border-radius:inherit;
+      box-shadow: 0 0 0 0 rgba(255,255,255,.0);
+      transition: box-shadow .35s ease;
+    }
+    .btn:active::after{
+      box-shadow: 0 0 0 14px rgba(255,255,255,.08);
+    }
+
+    /* Footer note */
+    .foot{
+      text-align:center;
+      color:var(--muted);
+      font-size:12px;
+      margin-top:12px;
+    }
+
+    /* Responsive touch sizes */
+    @media (max-width:360px){
+      .btn{ padding: 14px 8px; font-size:16px }
+      .screen{ font-size:28px }
+    }
+  </style>
+</head>
+<body data-theme="dark">
+  <div class="wrap">
+    <div class="calc" id="calc">
+      <div class="topbar">
+        <div class="brand">
+          <span class="pulse"></span>
+          <span>Neon&nbsp;Glass&nbsp;Calc</span>
+        </div>
+
+        <label class="theme" title="تبديل الوضع">
+          <input id="mode" type="checkbox" hidden>
+          <div class="switch"><div class="knob"></div></div>
+        </label>
+      </div>
+
+      <div class="display">
+        <div id="screen" class="screen">0</div>
+        <div id="sub" class="sub"></div>
+      </div>
+
+      <div class="keys" id="keys">
+        <!-- الصف الأول -->
+        <button class="btn fn" data-action="clear">AC</button>
+        <button class="btn fn" data-action="back">⌫</button>
+        <button class="btn op" data-value="%">%</button>
+        <button class="btn op" data-value="÷">÷</button>
+
+        <!-- الصف الثاني -->
+        <button class="btn" data-value="7">7</button>
+        <button class="btn" data-value="8">8</button>
+        <button class="btn" data-value="9">9</button>
+        <button class="btn op" data-value="×">×</button>
+
+        <!-- الصف الثالث -->
+        <button class="btn" data-value="4">4</button>
+        <button class="btn" data-value="5">5</button>
+        <button class="btn" data-value="6">6</button>
+        <button class="btn op" data-value="-">−</button>
+
+        <!-- الصف الرابع -->
+        <button class="btn" data-value="1">1</button>
+        <button class="btn" data-value="2">2</button>
+        <button class="btn" data-value="3">3</button>
+        <button class="btn op" data-value="+">+</button>
+
+        <!-- الصف الخامس -->
+        <button class="btn" data-value="0" data-wide="true">0</button>
+        <button class="btn" data-value=".">.</button>
+        <button class="btn eq" data-action="equal">=</button>
+      </div>
+    </div>
+    <div class="foot">تصميم نيون + جلاس جاهز للاستخدام — بس ضيف لوجيكك لو حابب.</div>
+  </div>
+
+  <script>
+    // وضع الليل/النهار
+    const mode = document.getElementById('mode');
+    const body = document.body;
+    mode.addEventListener('change',()=> {
+      body.setAttribute('data-theme', mode.checked ? 'light':'dark');
+    });
+
+    // لوجيك بسيط جدًا للحساب — ينفع تبدأ بيه وتزوّد
+    const screen = document.getElementById('screen');
+    const sub = document.getElementById('sub');
+    const keys = document.getElementById('keys');
+
+    // تحويل الرموز لِمُعاملات جافاسكربت
+    const toJS = (s)=> s
+      .replace(/÷/g,'/')
+      .replace(/×/g,'*')
+      .replace(/−/g,'-');
+
+    let expr = "";
+
+    const update = ()=>{
+      screen.textContent = expr || "0";
+    };
+
+    const input = (v)=>{
+      // منع تكرار العمليات مرتين متتاليتين
+      const isOp = /[+\-×÷%]/.test(v);
+      const last = expr.slice(-1);
+      if(isOp && /[+\-×÷%.]/.test(last)) {
+        expr = expr.slice(0,-1) + v;
+      }else{
+        expr += v;
+      }
+      update();
+    };
+
+    const evaluateExpr = ()=>{
+      if(!expr) return;
+      try{
+        // دعم النسبة المئوية كنسبة من الرقم السابق (نمط الآلات الحاسبة)
+        // مثال: 200 + 10% => 220
+        let e = expr;
+        e = e.replace(/(\d+(?:\.\d+)?)%/g, '($1/100)');
+
+        const val = Function("return " + toJS(e))();
+        if (Number.isFinite(val)) {
+          sub.textContent = expr + " =";
+          expr = ('' + (+val.toFixed(10))).replace(/\.0+$/,'').replace(/(\.\d*?)0+$/,'$1');
+          update();
+        }
+      }catch(_){
+        screen.textContent = "خطأ";
+        setTimeout(()=>{ screen.textContent = expr || "0"; }, 700);
+      }
+    };
+
+    keys.addEventListener('click', (e)=>{
+      const btn = e.target.closest('.btn');
+      if(!btn) return;
+
+      if(btn.dataset.action === 'clear'){ expr=""; sub.textContent=""; update(); return; }
+      if(btn.dataset.action === 'back'){ expr = expr.slice(0,-1); update(); return; }
+      if(btn.dataset.action === 'equal'){ evaluateExpr(); return; }
+
+      const v = btn.dataset.value;
+      input(v);
+    });
+
+    // دعم الكيبورد
+    window.addEventListener('keydown', (e)=>{
+      const k = e.key;
+      if(/\d/.test(k)) input(k);
+      else if(k === '.') input('.');
+      else if(k === '+') input('+');
+      else if(k === '-') input('−');
+      else if(k === '*') input('×');
+      else if(k === '/') input('÷');
+      else if(k === '%') input('%');
+      else if(k === 'Backspace') { expr = expr.slice(0,-1); update(); }
+      else if(k === 'Escape') { expr = ""; sub.textContent=""; update(); }
+      else if(k === 'Enter' || k === '=') evaluateExpr();
+    });
+  </script>
+</body>
+</html>
